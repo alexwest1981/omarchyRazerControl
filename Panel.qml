@@ -248,15 +248,16 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     visible: root.visible
-    text: {
+    text: "󰍽"
+    // 4.5 fits the whole `text` string into one 12 px glyph box, so an
+    // icon-plus-numbers string collapses to a smear; the numbers go here.
+    labelText: {
       if (root.showDpiInBar && root.deviceConnected && !vertical) {
-        var label = "󰍽 " + root.currentDpi
-        if (root.batteryLevel >= 0) {
-          label += " " + root.batteryLevel + "%"
-        }
+        var label = "" + root.currentDpi
+        if (root.batteryLevel >= 0) label += " " + root.batteryLevel + "%"
         return label
       }
-      return "󰍽"
+      return ""
     }
     slotSize: Style.bar.iconSlot * (root.showDpiInBar && root.deviceConnected && !vertical ? (root.batteryLevel >= 0 ? 2.9 : 2.0) : 1.0)
     tooltipText: root.deviceName + (root.deviceConnected ? (" (" + root.currentDpi + " DPI @ " + root.currentPollRate + " Hz" + (root.batteryLevel >= 0 ? ", batteri " + root.batteryLevel + " %" + (root.charging ? " (laddar)" : "") : "") + ")") : (" " + root.t("disconnected")))
