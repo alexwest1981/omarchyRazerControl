@@ -402,9 +402,15 @@ class RazerDeviceManager:
     def hw_set_brightness(self, brightness):
         # Brightness 0-100% -> 0-255
         val = int(max(0, min(100, brightness)) * 255 / 100)
-        # Extended matrix brightness: 0x0f, 0x04
-        args = struct.pack(">BBB", 0x01, 0x04, val) # VARSTORE, LOGO_LED, brightness
-        return self.send_recv_report(0x0f, 0x04, 3, args)
+        # Extended matrix brightness: 0x0f, 0x04. Write every zone, not just the
+        # logo: a zone left at 0 looks exactly like a broken effect, and the
+        # thumb-grid (0x05) is the one whose buttons light up. ZERO_LED (0x00)
+        # is what the driver itself uses for a global brightness.
+        last = None
+        for led_id in (0x00, 0x05, 0x04, 0x01):
+            args = struct.pack(">BBB", 0x01, led_id, val)
+            last = self.send_recv_report(0x0f, 0x04, 3, args) or last
+        return last
 
     def hw_set_effect(self, effect, hex_color="#00FF66"):
         """Set lighting effect: static, spectrum, breathing, off.
