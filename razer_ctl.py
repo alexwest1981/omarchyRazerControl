@@ -407,9 +407,10 @@ class RazerDeviceManager:
         # thumb-grid (0x05) is the one whose buttons light up. ZERO_LED (0x00)
         # is what the driver itself uses for a global brightness.
         last = None
-        for led_id in (0x00, 0x05, 0x04, 0x01):
-            args = struct.pack(">BBB", 0x01, led_id, val)
-            last = self.send_recv_report(0x0f, 0x04, 3, args) or last
+        for varstore in (0x01, 0x00):
+            for led_id in (0x00, 0x05, 0x04, 0x01):
+                args = struct.pack(">BBB", varstore, led_id, val)
+                last = self.send_recv_report(0x0f, 0x04, 3, args) or last
         return last
 
     def hw_set_effect(self, effect, hex_color="#00FF66"):
@@ -431,9 +432,7 @@ class RazerDeviceManager:
         else:
             r, g, b = (0, 255, 102)
 
-        varstore = 0x01
-
-        def report(led_id):
+        def report(led_id, varstore):
             if effect == "off":
                 # razer_chroma_extended_matrix_effect_none: 0x0f, 0x02, size 6
                 args = struct.pack(">BBBBBB", varstore, led_id, 0x00, 0x00, 0x00, 0x00)
@@ -451,8 +450,12 @@ class RazerDeviceManager:
             return self.send_recv_report(0x0f, 0x02, 9, args)
 
         last = None
-        for led_id in (0x05, 0x04, 0x01):   # thumb-grid, logo, scroll wheel
-            last = report(led_id) or last
+        # Both slots: 0x01 is the driver slot, 0x00 is the active onboard
+        # profile the firmware applies by itself. Measured: the mouse READS 0x00,
+        # so a write to 0x01 alone is stored but never shown.
+        for varstore_slot in (0x01, 0x00):
+            for led_id in (0x05, 0x04, 0x01):   # thumb-grid, logo, scroll wheel
+                last = report(led_id, varstore_slot) or last
         return last
 
 
